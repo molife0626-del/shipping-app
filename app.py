@@ -11,7 +11,7 @@ st.set_page_config(page_title="出荷重量計算システム(印刷対応版)",
 # 🔐 パスワード認証
 # ==========================================
 def check_password():
-    SECRET_PASSWORD = "1234" 
+    SECRET_PASSWORD = "mbss3457" 
     if "password_correct" not in st.session_state:
         st.session_state.password_correct = False
 
