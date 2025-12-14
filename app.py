@@ -11,7 +11,7 @@ st.set_page_config(page_title="出荷重量計算システム(印刷対応版)",
 # 🔐 パスワード認証
 # ==========================================
 def check_password():
-    SECRET_PASSWORD = "mbss3457" 
+    SECRET_PASSWORD = "1234" 
     if "password_correct" not in st.session_state:
         st.session_state.password_correct = False
 
@@ -36,7 +36,6 @@ if 'master_df' not in st.session_state:
 
 # --- STEP 1: マスター登録 ---
 st.header("❶ 単重マスターの登録")
-# type指定を削除（スマホ対策）
 master_file = st.file_uploader("単重マスター(Excel/CSV)", type=None, key="m")
 
 if master_file:
@@ -70,9 +69,12 @@ st.divider()
 
 # --- STEP 2: 計算 ---
 st.header("❷ 出荷指示計算")
-if not st.session_state.master_df: st.info("先にマスターを登録してください"); st.stop()
 
-# type指定を削除
+# ★★★ 修正箇所：ここを書き換えました ★★★
+if st.session_state.master_df is None:
+    st.info("先にマスターを登録してください")
+    st.stop()
+
 ship_file = st.file_uploader("出荷指示(Excel/CSV)", type=None, key="s")
 
 if ship_file:
@@ -130,22 +132,17 @@ st.header("❸ 印刷用ファイルの出力")
 
 if 'summary' in st.session_state:
     st.markdown("作成した「受領証の雛形（テンプレートExcel）」をここでアップロードしてください。")
-    st.markdown("※GitHubに置く必要はありません。毎回ここで選べます。")
     
-    # type指定を削除
     template_file = st.file_uploader("テンプレートExcelを選択", type=None, key="tpl")
 
     if template_file:
         try:
-            # アップロードされたファイルを読み込む
             wb = openpyxl.load_workbook(template_file)
             ws = wb.active
 
-            # --- 書き込み処理 ---
             now = datetime.now()
             
-            # 日付 (セル番地は実際のExcelに合わせて変更してください)
-            # 例: C2に年, E2に月, G2に日
+            # 日付
             if ws['C2'].value is None: ws['C2'] = now.year
             if ws['E2'].value is None: ws['E2'] = now.month
             if ws['G2'].value is None: ws['G2'] = now.day
@@ -153,21 +150,15 @@ if 'summary' in st.session_state:
             # 重量の書き込み
             summary_dict = dict(zip(st.session_state.summary["パレットNo"], st.session_state.summary["総重量"]))
 
-            # 画像の位置に合わせてセット (セル番地 H5, H6... は要調整)
-            # 1つ目のパレット
             ws['H5'] = summary_dict.get(1, 0)
-            # 2つ目のパレット
             ws['H6'] = summary_dict.get(2, 0)
-            # 3つ目のパレット
             ws['H7'] = summary_dict.get(3, 0)
-            # 4つ目のパレット
             ws['H8'] = summary_dict.get(4, 0)
             
             # 合計
             total_w = st.session_state.summary["総重量"].sum()
             ws['H20'] = total_w
 
-            # 保存
             output = io.BytesIO()
             wb.save(output)
             output.seek(0)
